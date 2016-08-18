@@ -1,0 +1,63 @@
+<html lang="ja">
+
+<head>
+    <title>Movie Panorama Example</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        
+        .debug-panel-header {
+            border-bottom: 1px solid #aaa;
+            padding-bottom: 3px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .debug {
+            /**display: none;*/
+        }
+        
+        #info {
+            position: absolute;
+            width: 400px;
+            height: 200px;
+            background-color: rgba(48, 51, 54, 0.8);
+            top: 20;
+            right: 20;
+            border-radius: 5px;
+            border: 1px solid #444;
+            color: #edffff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="stage"></div>
+    <div id="info" class="debug">
+        <div class="debug-panel-header">Debug</div>
+        <div id="currentTime">0</div>
+        <div id="duration">0</div>
+        <div>
+            <button type="button" id="play">start/stop</button>
+        </div>
+        <div>
+            <button type="button" id="speed_1">等速</button>
+            <button type="button" id="speed_2">2倍速</button>
+            <button type="button" id="speed_3">逆再生</button>
+
+        </div>
+    </div>
+    <script src="./lib/three.min.js"></script>
+    <script src="./lib/OrbitControls.js"></script>
+    <script src="./lib/stats.min.js"></script>
+    <script src="./lib/jquery-3.1.0.min.js"></script>
+    <script src="./Viewer.js"></script>
+    <script src="./main.js"></script>
+</body>
+
+</html>

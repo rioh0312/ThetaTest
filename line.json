@@ -1,0 +1,22 @@
+{
+	"id": "1234",
+	"title": "ニセコ１",
+	"type": "line",
+	"url": "http://localhost/ThetaTest/R0010035_er.MP4",
+	"next_node_id": "1",
+	"prev_node_id": "2",
+	"items": [
+		{
+			"title": "店１",
+			"image": "hogehoge",
+			"lon": "0.0",
+			"lat": "0.0"
+		},
+		{
+			"title": "店１",
+			"image": "hogehoge",
+			"lon": "0.0",
+			"lat": "0.0"
+		}
+	]
+}
