@@ -11,15 +11,35 @@
             font-family: Verdana, Geneva, Tahoma, sans-serif;
         }
         
+        #stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
         .debug-panel-header {
             border-bottom: 1px solid #aaa;
             padding-bottom: 3px;
             cursor: pointer;
             text-align: center;
         }
-
+        
         .debug {
-            /**display: none;*/
+            display: none;
+        }
+        
+        #play {
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        #next {
+            position: absolute;
+            right: 0;
+            bottom: 0;
         }
         
         #info {
@@ -38,6 +58,8 @@
 
 <body>
     <div id="stage"></div>
+    <button type="button" id="play">play</button>
+    <button type="button" id="next">next</button>
     <div id="info" class="debug">
         <div class="debug-panel-header">Debug</div>
         <div id="currentTime">0</div>
@@ -53,9 +75,12 @@
         </div>
     </div>
     <script src="./lib/three.min.js"></script>
+    <script src="./lib/StereoEffect.js"></script>
     <script src="./lib/OrbitControls.js"></script>
+    <script src="./lib/DeviceOrientationControls.js"></script>
     <script src="./lib/stats.min.js"></script>
     <script src="./lib/jquery-3.1.0.min.js"></script>
+    <script src="./lib/iphone-inline-video.browser.js"></script>
     <script src="./Viewer.js"></script>
     <script src="./main.js"></script>
 </body>

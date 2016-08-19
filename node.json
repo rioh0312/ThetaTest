@@ -2,19 +2,23 @@
 	"id": "1",
 	"title": "ニセコ１",
 	"type": "node",
-	"url": "http://localhost/ThetaTest/IMG_0509.JPG",
+	"url": "IMG_0509.JPG",
 	"lines": [
 		{
-			"id": "1234"
+			"id": "1234",
+			"degree": 0
 		},
 		{
-			"id": "1234"
+			"id": "2345",
+			"degree": 90
 		},
 		{
-			"id": "1234"
+			"id": "3456",
+			"degree": 180
 		},
 		{
-			"id": "1234"
+			"id": "4567",
+			"degree": 270
 		}
 	]
 }
