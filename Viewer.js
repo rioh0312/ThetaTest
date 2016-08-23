@@ -3,17 +3,26 @@ class Viewer {
     constructor() {
         this.video;
         this.scene;
+        this.camera;
         this.sphere;
         this.effect;
         this.seeking = false;
         this.lastKeyCode;
         this.prevLineId;
         this.prevNodeId;
+        this.selectObjects = [];
+        this.selected;
+        this.projector = new THREE.Projector();
+        this.raycaster = new THREE.Raycaster();
+        this.mode;
+
+        this.LIMIT = 200;
     }
 
     start() {
 
         var clock = new THREE.Clock();
+        var that = this;
 
         // create renderer
         var renderer = new THREE.WebGLRenderer({
@@ -44,6 +53,7 @@ class Viewer {
 
         // create/add camera
         var camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
+        this.camera = camera;
         camera.position.set(0, 0, 0.1);
         camera.lookAt(sphere.position);
         scene.add(camera);
@@ -51,7 +61,7 @@ class Viewer {
         // create controls
         var controls = new THREE.OrbitControls(camera, element);
         //controls.noZoom = true;
-        controls.noPan = true;
+        controls.enablePan = true;
 
         function setOrientationControls(e) {
             if (!e.alpha) {
@@ -79,6 +89,20 @@ class Viewer {
         stats.domElement.style.zIndex = 100;
         document.body.appendChild(stats.domElement);
 
+        /*
+        var helper = new THREE.AxisHelper(1000);
+        scene.add(helper);
+        var ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(10, 10, 10, 10),
+            new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                wireframe: true
+            })
+        );
+        ground.rotation.x = Math.PI / -2;
+        scene.add(ground);
+        */
+
         animate();
 
         function resize() {
@@ -93,11 +117,85 @@ class Viewer {
         }
 
         function update(dt) {
+            var selectObjects = that.selectObjects;
+            var projector = that.projector;
+            var camera = that.camera;
+            var raycaster = that.raycaster;
+            var scene = that.scene;
             resize();
 
             camera.updateProjectionMatrix();
-
             controls.update(dt);
+          
+            if (that.mode === "node") {
+                var intersectables = [];
+                for (var i = 0; i < selectObjects.length; i++) {
+                    var mesh = selectObjects[i];
+                    mesh.rotation.setFromRotationMatrix(camera.matrix);
+                    intersectables.push(mesh);
+                }
+
+                var gaze = new THREE.Vector3(0, 0, 1);
+                gaze.unproject(camera);
+                raycaster.set(
+                    camera.position,
+                    gaze.sub(camera.position).normalize()
+                );
+                var intersects = raycaster.intersectObjects(intersectables);
+
+                // reset
+                intersectables.forEach(function (i) {
+                    i.scale.set(1, 1, 1);
+                    i.material.wireframe = true;
+                    i.material.needsUpdate = true;
+                });
+
+                // if found
+                if (intersects.length > 0) {
+                    var found = intersects[0];
+                    // highlight
+                    found.object.scale.set(1.2, 1.2, 1.2);
+                    found.object.material.wireframe = false;
+                    found.object.material.needsUpdate = true;
+
+                    if (!that.selected) {
+                        that.selected = {
+                            id: found.object.uuid,
+                            limit: that.LIMIT,
+                            obj: found.object
+                        };
+                    } else {
+                        if (that.selected.id === found.object.uuid) {
+
+                            that.selected.limit -= 1;
+                            if (that.selected.limit <= 0) {
+
+                                // todo:lineidで探すべき
+                                $.ajax({
+                                    type: "POST",
+                                    url: "line.json",
+                                    dataType: "json",
+                                    success: function (response) {
+                                        viewer.updateMaterial(response);
+                                    },
+                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                    }
+                                });
+                            }
+                        } else {
+                            that.selected = {
+                                id: found.object.uuid,
+                                limit: that.LIMIT,
+                                obj: found.object
+                            };
+                        }
+                    }
+                } else {
+                    that.selected = undefined;
+                }
+            } else {
+                that.selected = undefined;
+            }
         }
 
         function render(dt) {
@@ -107,7 +205,6 @@ class Viewer {
 
         function animate(t) {
             requestAnimationFrame(animate);
-
             update(clock.getDelta());
             render(clock.getDelta());
         }
@@ -141,11 +238,13 @@ class Viewer {
         var that = this;
         var sphere = this.sphere;
         var scene = this.scene;
+        var camera = this.camera;
+        this.mode = "node";
+        var selectObjects = this.selectObjects;
         sphere.material.wireframe = false;
         var url = obj.url;
         this.prevLineId = "1234"; //debug
 
-        /*
         for (var i = 0; i < obj.lines.length; i++) {
             var line = obj.lines[i];
 
@@ -156,33 +255,25 @@ class Viewer {
                 color = 0xff0000;
             }
 
-            var radius = 3;
+            var radius = 4;
             var rad = line.degree * Math.PI / 180;
             var x = radius * Math.cos(rad);
             var z = radius * Math.sin(rad);
 
-            var material = new THREE.MeshBasicMaterial({ color: color });
-            var geometry = new THREE.SphereGeometry(0.1, 5, 5)
-            var mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(x, 0, z);
-            scene.add(mesh);
+            var material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+            var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
+            var mesh1 = new THREE.Mesh(geometry, material);
+            mesh1.position.x = x;
+            mesh1.position.z = z;
+            scene.add(mesh1);
+
+            selectObjects.push(mesh1);
         }
-        */
 
-        sphere.material.map = THREE.ImageUtils.loadTexture(url);
-        sphere.material.needsUpdate = true;
-
-        document.getElementById('next').addEventListener('click', function () {
-            $.ajax({
-                type: "POST",
-                url: "line.json",
-                dataType: "json",
-                success: function (response) {
-                    that.updateMaterial(response);
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                }
-            });
+        var loader = new THREE.TextureLoader();
+        loader.load(url, function (map) {
+            sphere.material.map = map;
+            sphere.material.needsUpdate = true;
         });
     }
 
@@ -190,7 +281,22 @@ class Viewer {
         var that = this;
         var sphere = this.sphere;
         var scene = this.scene;
+        var selectObjects = this.selectObjects;
+        this.mode = "line";
         sphere.material.wireframe = false;
+
+
+        for (var i = 0; i < selectObjects.length; i++) {
+            let obj = selectObjects[i];
+            let mesh = obj;
+            let geometry = obj.geometry;
+            let material = obj.material;
+            scene.remove(mesh);
+            geometry.dispose();
+            material.dispose();
+        }
+        this.selectObjects = [];
+
 
         var url = obj.url;
         this.prevLineId = obj.id;
@@ -217,8 +323,7 @@ class Viewer {
             video.width = 640;
             video.height = 360;
             video.muted = true;
-            video.autoplay = true;
-            video.playbackRate = 3.0;
+            video.autoplay = false;
             video.loop = false;
             video.src = url;
 
@@ -250,7 +355,7 @@ class Viewer {
                 });
 
             }
-            window.makeVideoPlayableInline(video, /* mute necessary for autoplay*/ false);
+            window.makeVideoPlayableInline(video, false);
             video.pause();
 
             // 動画プレイヤーをテクスチャとするマテリアルを作成
