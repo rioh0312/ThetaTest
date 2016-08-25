@@ -6,8 +6,6 @@ class Viewer {
         this.camera;
         this.sphere;
         this.effect;
-        this.seeking = false;
-        this.lastKeyCode;
         this.prevLineId;
         this.prevNodeId;
         this.selectObjects = [];
@@ -15,6 +13,7 @@ class Viewer {
         this.projector = new THREE.Projector();
         this.raycaster = new THREE.Raycaster();
         this.mode;
+        this.canplay;
 
         this.LIMIT = 200;
     }
@@ -171,6 +170,7 @@ class Viewer {
                             if (that.selected.limit <= 0) {
 
                                 // todo:lineidで探すべき
+                                Viewer.writeLog('select root');
                                 $.ajax({
                                     type: "POST",
                                     url: "line.json",
@@ -183,7 +183,7 @@ class Viewer {
                                         viewer.updateMaterial(response);
                                     },
                                     error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                        alert(errorThrown);
+                                        Viewer.writeLog(errorThrown);
                                     }
                                 });
                             }
@@ -275,10 +275,12 @@ class Viewer {
             selectObjects.push(mesh1);
         }
 
+        Viewer.writeLog('start node texture loading');
         var loader = new THREE.TextureLoader();
         loader.load(url, function (map) {
             sphere.material.map = map;
             sphere.material.needsUpdate = true;
+            Viewer.writeLog('loaded node texture');
         });
     }
 
@@ -289,7 +291,6 @@ class Viewer {
         var selectObjects = this.selectObjects;
         this.mode = "line";
         sphere.material.wireframe = false;
-
 
         for (var i = 0; i < selectObjects.length; i++) {
             var selectObj = selectObjects[i];
@@ -317,9 +318,11 @@ class Viewer {
             texture.minFilter = THREE.LinearFilter;
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
-            video.addEventListener('canplaythrough', function () {
-                video.play();
-            });
+
+            //video.pause();
+            //video.addEventListener('canplaythrough', function () {
+            video.play();
+            //});
 
         } else {
             video = document.createElement('video');
@@ -332,18 +335,47 @@ class Viewer {
             video.loop = false;
             video.src = url;
 
-            var seekingStartTime;
-            video.onseeking = function () {
-                seeking = true;
-                seekingStartTime = new Date().getTime();
-                console.log("seeking:" + lastKeyCode);
+            video.onloadstart = function () {
+                Viewer.writeLog('start movie loading');
             }
-            video.onseeked = function () {
-                seeking = false;
-                console.log("seeked:" + (new Date().getTime() - seekingStartTime) + "ms");
+            video.onprogress = function () {
+                Viewer.writeLog('now loading(network loading) ..');
+            }
+            video.onsuspend = function () {
+                Viewer.writeLog('now loading(network idle) ..');
+            }
+            video.onloadedmetadata = function () {
+                Viewer.writeLog('loaded metadata');
+            }
+            video.onstalled = function () {
+                Viewer.writeLog('stalled');
+            }
+            video.onloadeddata = function () {
+                Viewer.writeLog('loaded movie');
+            }
+            video.oncanplaythrough = function () {
+                Viewer.writeLog('can play through');
+                that.canplay = true;
+            }
+            video.onplay = function () {
+                Viewer.writeLog('play');
+                if (!that.canplay) {
+                    Viewer.writeLog('yet can play through ..');
+                    video.pause();
+                    video.addEventListener('canplaythrough', function () {
+                        that.canplay = true;
+                        video.play();
+                    });
+                }
+            }
+            video.onpause = function () {
+                Viewer.writeLog('pause');
             }
             video.onended = function () {
+                Viewer.writeLog('ended');
                 video.pause();
+                that.canplay = false;
+
                 $.ajax({
                     type: "POST",
                     url: "node.json", // TODO サーバーサイドでdataの内容に合わせたJSONを返却
@@ -368,13 +400,20 @@ class Viewer {
             texture.minFilter = THREE.LinearFilter;
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
-            video.addEventListener('canplaythrough', function () {
-                console.log('complete');
-            });
-
+            //video.addEventListener('canplaythrough', function () {
+            //});
             document.getElementById('play').addEventListener('click', function () {
                 video.play();
             }, false);
         }
+    }
+
+    static writeLog(msg) {
+        if ($('#log-field').children().length >= 50) {
+            $('#log-field').children()[0].remove();
+        }
+        var li = "<li>" + msg + "</li>";
+        $('#log-field').append(li)
+        $('#info').scrollTop($('#info')[0].scrollHeight);
     }
 }

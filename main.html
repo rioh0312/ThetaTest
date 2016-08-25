@@ -28,7 +28,7 @@
         }
         
         .debug {
-            display: none;
+            /**display: none;*/
         }
         
         #play {
@@ -46,13 +46,21 @@
         #info {
             position: absolute;
             width: 400px;
-            height: 200px;
+            height: 130px;
             background-color: rgba(48, 51, 54, 0.8);
-            top: 20;
-            right: 20;
+            bottom: 0;
+            left: 0;
             border-radius: 5px;
             border: 1px solid #444;
             color: #edffff;
+            font-size: 8px;
+            overflow: scroll;
+            overflow-x: hidden;
+        }
+        
+        #info > ul {
+            padding: 0px;
+            margin: 4px;
         }
     </style>
 </head>
@@ -62,18 +70,7 @@
     <button type="button" id="play">play</button>
     <button type="button" id="next">next</button>
     <div id="info" class="debug">
-        <div class="debug-panel-header">Debug</div>
-        <div id="currentTime">0</div>
-        <div id="duration">0</div>
-        <div>
-            <button type="button" id="play">start/stop</button>
-        </div>
-        <div>
-            <button type="button" id="speed_1">等速</button>
-            <button type="button" id="speed_2">2倍速</button>
-            <button type="button" id="speed_3">逆再生</button>
-
-        </div>
+        <ul id="log-field"></ul>
     </div>
     <script src="./lib/three.min.js"></script>
     <script src="./lib/StereoEffect.js"></script>
