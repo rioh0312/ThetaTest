@@ -126,7 +126,7 @@ class Viewer {
 
             camera.updateProjectionMatrix();
             controls.update(dt);
-          
+
             if (that.mode === "node") {
                 var intersectables = [];
                 for (var i = 0; i < selectObjects.length; i++) {
@@ -175,10 +175,15 @@ class Viewer {
                                     type: "POST",
                                     url: "line.json",
                                     dataType: "json",
+                                    beforeSend: function (xhr) {
+                                        //if (window.navigator.userAgent.toLowerCase().indexOf('safari') != -1)
+                                        xhr.setRequestHeader("If-Modified-Since", new Date().toUTCString());
+                                    },
                                     success: function (response) {
                                         viewer.updateMaterial(response);
                                     },
                                     error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                        alert(errorThrown);
                                     }
                                 });
                             }
@@ -287,10 +292,10 @@ class Viewer {
 
 
         for (var i = 0; i < selectObjects.length; i++) {
-            let obj = selectObjects[i];
-            let mesh = obj;
-            let geometry = obj.geometry;
-            let material = obj.material;
+            var selectObj = selectObjects[i];
+            var mesh = selectObj;
+            var geometry = mesh.geometry;
+            var material = mesh.material;
             scene.remove(mesh);
             geometry.dispose();
             material.dispose();
