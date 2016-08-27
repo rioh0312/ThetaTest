@@ -1,6 +1,6 @@
 class Viewer {
 
-    constructor() {
+    constructor(viewmode) {
         this.video;
         this.scene;
         this.camera;
@@ -16,6 +16,9 @@ class Viewer {
         this.canplay;
 
         this.LIMIT = 200;
+        this.VIEW_MODE_ZEOR = "0";
+        this.VIEW_MODE_ONE = "1";
+        this.viewmode = viewmode;
     }
 
     start() {
@@ -32,8 +35,10 @@ class Viewer {
         var container = document.getElementById('stage');
         container.appendChild(element);
 
-        // create effect
-        var effect = new THREE.StereoEffect(renderer);
+        // create stereo effect
+        if (this.viewmode === this.VIEW_MODE_ONE) {
+            var effect = new THREE.StereoEffect(renderer);
+        }
 
         // create scene
         var scene = new THREE.Scene();
@@ -112,7 +117,10 @@ class Viewer {
             camera.updateProjectionMatrix();
 
             renderer.setSize(width, height);
-            effect.setSize(width, height);
+
+            if (that.viewmode === that.VIEW_MODE_ONE) {
+                effect.setSize(width, height);
+            }
         }
 
         function update(dt) {
@@ -180,7 +188,7 @@ class Viewer {
                                         xhr.setRequestHeader("If-Modified-Since", new Date().toUTCString());
                                     },
                                     success: function (response) {
-                                        viewer.updateMaterial(response);
+                                        that.updateMaterial(response);
                                     },
                                     error: function (XMLHttpRequest, textStatus, errorThrown) {
                                         Viewer.writeLog(errorThrown);
@@ -204,7 +212,11 @@ class Viewer {
         }
 
         function render(dt) {
-            effect.render(scene, camera);
+            if (that.viewmode === that.VIEW_MODE_ONE) {
+                effect.render(scene, camera);
+            } else {
+                renderer.render(scene, camera);
+            }
             stats.update();
         }
 
