@@ -66,7 +66,7 @@ class Viewer {
 
         // create controls
         var controls = new THREE.OrbitControls(camera, element);
-        //controls.noZoom = true;
+        controls.noZoom = true;
         controls.enablePan = true;
 
         function setOrientationControls(e) {
