@@ -181,7 +181,7 @@ class Viewer {
                                 Viewer.writeLog('select root');
                                 $.ajax({
                                     type: "POST",
-                                    url: "http://localhost/manavimk2/road/send",
+                                    url: "http://www.snowwhite.hokkaido.jp/manavimk2/road/send",
                                     dataType: "json",
                                     beforeSend: function (xhr) {
                                         //if (window.navigator.userAgent.toLowerCase().indexOf('safari') != -1)
@@ -390,7 +390,7 @@ class Viewer {
 
                 $.ajax({
                     type: "POST",
-                    url: "http://localhost/manavimk2/node/send", // TODO サーバーサイドでdataの内容に合わせたJSONを返却
+                    url: "http://www.snowwhite.hokkaido.jp/manavimk2/node/send", // TODO サーバーサイドでdataの内容に合わせたJSONを返却
                     data: {
                         id: obj.next_node_id
                     },
