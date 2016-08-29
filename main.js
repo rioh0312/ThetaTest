@@ -16,7 +16,7 @@ var viewer;
 
     $.ajax({
         type: "POST",
-        url: "http://localhost/manavimk2/road/send",
+        url: "line.json",
         dataType: "json",
         success: function (response) {
             viewer.updateMaterial(response);
@@ -28,7 +28,7 @@ var viewer;
     $('#next').on('click', function () {
         $.ajax({
             type: "POST",
-            url: "http://localhost/manavimk2/road/send",
+            url: "line.json",
             dataType: "json",
             success: function (response) {
                 viewer.updateMaterial(response);
