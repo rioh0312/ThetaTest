@@ -9,13 +9,15 @@ class Viewer {
         this.prevLineId;
         this.prevNodeId;
         this.selectObjects = [];
+        this.eventItems = [];
         this.selected;
         this.projector = new THREE.Projector();
         this.raycaster = new THREE.Raycaster();
         this.mode;
+        this.itemView;
         this.canplay;
 
-        this.LIMIT = 200;
+        this.LIMIT = 100;
         this.VIEW_MODE_ZEOR = "0";
         this.VIEW_MODE_ONE = "1";
         this.viewmode = viewmode;
@@ -93,20 +95,6 @@ class Viewer {
         stats.domElement.style.zIndex = 100;
         document.body.appendChild(stats.domElement);
 
-        /*
-        var helper = new THREE.AxisHelper(1000);
-        scene.add(helper);
-        var ground = new THREE.Mesh(
-            new THREE.PlaneGeometry(10, 10, 10, 10),
-            new THREE.MeshBasicMaterial({
-                color: 0xFFFFFF,
-                wireframe: true
-            })
-        );
-        ground.rotation.x = Math.PI / -2;
-        scene.add(ground);
-        */
-
         animate();
 
         function resize() {
@@ -125,6 +113,7 @@ class Viewer {
 
         function update(dt) {
             var selectObjects = that.selectObjects;
+            var eventItems = that.eventItems;
             var projector = that.projector;
             var camera = that.camera;
             var raycaster = that.raycaster;
@@ -134,54 +123,91 @@ class Viewer {
             camera.updateProjectionMatrix();
             controls.update(dt);
 
-            if (that.mode === "node") {
-                var intersectables = [];
-                for (var i = 0; i < selectObjects.length; i++) {
-                    var mesh = selectObjects[i];
-                    mesh.rotation.setFromRotationMatrix(camera.matrix);
-                    intersectables.push(mesh);
+            var intersectables = [];
+            for (var i = 0; i < selectObjects.length; i++) {
+                var mesh = selectObjects[i];
+                mesh.rotation.setFromRotationMatrix(camera.matrix);
+                intersectables.push(mesh);
+            }
+            for (var i = 0; i < eventItems.length; i++) {
+                var mesh = eventItems[i];
+                mesh.rotation.setFromRotationMatrix(camera.matrix);
+                intersectables.push(mesh);
+
+                var currentTime = that.video.currentTime;
+                if (mesh.start <= currentTime) {
+                    mesh.visible = true;
                 }
+                if (mesh.end <= currentTime) {
+                    mesh.visible = false;
+                }
+            }
+            if (that.itemView) {
+                that.itemView.rotation.setFromRotationMatrix(camera.matrix);
+            }
 
-                var gaze = new THREE.Vector3(0, 0, 1);
-                gaze.unproject(camera);
-                raycaster.set(
-                    camera.position,
-                    gaze.sub(camera.position).normalize()
-                );
-                var intersects = raycaster.intersectObjects(intersectables);
+            var gaze = new THREE.Vector3(0, 0, 1);
+            gaze.unproject(camera);
+            raycaster.set(
+                camera.position,
+                gaze.sub(camera.position).normalize()
+            );
+            var intersects = raycaster.intersectObjects(intersectables);
 
-                // reset
-                intersectables.forEach(function (i) {
-                    i.scale.set(1, 1, 1);
-                    i.material.wireframe = true;
-                    i.material.needsUpdate = true;
-                });
+            // reset
+            intersectables.forEach(function (i) {
+                i.scale.set(2, 2, 2);
+                //i.material.wireframe = true;
+                i.material.needsUpdate = true;
+            });
 
-                // if found
-                if (intersects.length > 0) {
-                    var found = intersects[0];
-                    // highlight
-                    found.object.scale.set(1.2, 1.2, 1.2);
-                    found.object.material.wireframe = false;
-                    found.object.material.needsUpdate = true;
+            // if found
+            if (intersects.length > 0) {
+                var found = intersects[0];
+                // highlight
+                found.object.scale.set(3.0, 3.0, 3.0);
+                //found.object.material.wireframe = false;
+                found.object.material.needsUpdate = true;
 
-                    if (!that.selected) {
-                        that.selected = {
-                            id: found.object.uuid,
-                            limit: that.LIMIT,
-                            obj: found.object
-                        };
-                    } else {
-                        if (that.selected.id === found.object.uuid) {
+                if (!that.selected) {
+                    that.selected = {
+                        id: found.object.uuid,
+                        limit: that.LIMIT,
+                        obj: found.object
+                    };
+                } else {
+                    if (that.selected.id === found.object.uuid) {
 
-                            that.selected.limit -= 1;
-                            if (that.selected.limit <= 0) {
+                        that.selected.limit -= 1;
+                        if (that.selected.limit <= 0) {
 
-                                // todo:lineidで探すべき
-                                Viewer.writeLog('select root');
+                            Viewer.writeLog('select root');
+                            if (found.object.type === 'event') {
+                                if (!that.itemView) {
+                                    that.video.pause();
+
+                                    var loader = new THREE.TextureLoader();
+                                    loader.load(mesh.viewfile, function (map) {
+                                        var material = new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false });
+                                        var geometry = new THREE.PlaneGeometry(7, 5, 0, 0);
+                                        var mesh = new THREE.Mesh(geometry, material);
+                                        mesh.position.x = found.object.position.x;
+                                        mesh.position.z = found.object.position.z;
+                                        mesh.type = 'event';
+                                        material.needsUpdate = true;
+                                        scene.add(mesh);
+
+                                        that.itemView = mesh;
+                                    });
+                                }
+
+                            } else {
                                 $.ajax({
                                     type: "POST",
                                     url: "line.json",
+                                    data: {
+                                        "id": found.object.lineId
+                                    },
                                     dataType: "json",
                                     beforeSend: function (xhr) {
                                         //if (window.navigator.userAgent.toLowerCase().indexOf('safari') != -1)
@@ -195,19 +221,26 @@ class Viewer {
                                     }
                                 });
                             }
-                        } else {
-                            that.selected = {
-                                id: found.object.uuid,
-                                limit: that.LIMIT,
-                                obj: found.object
-                            };
                         }
+                    } else {
+                        that.selected = {
+                            id: found.object.uuid,
+                            limit: that.LIMIT,
+                            obj: found.object
+                        };
                     }
-                } else {
-                    that.selected = undefined;
                 }
             } else {
                 that.selected = undefined;
+            }
+
+            if (that.itemView && !that.selected) {
+                var mesh = that.itemView;
+                scene.remove(mesh);
+                geometry.dispose();
+                material.dispose();
+                that.video.play();
+                that.itemView = undefined
             }
         }
 
@@ -256,12 +289,27 @@ class Viewer {
         var sphere = this.sphere;
         var scene = this.scene;
         var camera = this.camera;
-        this.mode = "node";
         var selectObjects = this.selectObjects;
+        var eventItems = this.eventItems;
+        this.prevLineId = "1234"; //debug
+        this.mode = "node";
+
         sphere.material.wireframe = false;
         var url = obj.url;
-        this.prevLineId = "1234"; //debug
 
+        // remove event items
+        for (var i = 0; i < eventItems.length; i++) {
+            var item = eventItems[i];
+            var mesh = item;
+            var geometry = mesh.geometry;
+            var material = mesh.material;
+            scene.remove(mesh);
+            geometry.dispose();
+            material.dispose();
+        }
+        this.eventItems = [];
+
+        // create select objects
         for (var i = 0; i < obj.lines.length; i++) {
             var line = obj.lines[i];
 
@@ -277,14 +325,16 @@ class Viewer {
             var x = radius * Math.cos(rad);
             var z = radius * Math.sin(rad);
 
-            var material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+            var material = new THREE.MeshBasicMaterial({ color: color/*, wireframe: true*/ });
             var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
-            var mesh1 = new THREE.Mesh(geometry, material);
-            mesh1.position.x = x;
-            mesh1.position.z = z;
-            scene.add(mesh1);
+            var mesh = new THREE.Mesh(geometry, material);
+            mesh.position.x = x;
+            mesh.position.z = z;
+            mesh.lineId = line.id;
+            mesh.type = 'selector';
+            scene.add(mesh);
 
-            selectObjects.push(mesh1);
+            selectObjects.push(mesh);
         }
 
         Viewer.writeLog('start node texture loading');
@@ -301,9 +351,11 @@ class Viewer {
         var sphere = this.sphere;
         var scene = this.scene;
         var selectObjects = this.selectObjects;
+        var eventItems = this.eventItems;
         this.mode = "line";
         sphere.material.wireframe = false;
 
+        // remove select objects
         for (var i = 0; i < selectObjects.length; i++) {
             var selectObj = selectObjects[i];
             var mesh = selectObj;
@@ -314,6 +366,28 @@ class Viewer {
             material.dispose();
         }
         this.selectObjects = [];
+
+        // create event items
+        for (var i = 0; i < obj.items.length; i++) {
+            var item = obj.items[i];
+            var loader = new THREE.TextureLoader();
+            loader.load(item.file, function (map) {
+                var material = new THREE.MeshBasicMaterial({ map: map, transparent: true });
+                var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
+                var mesh = new THREE.Mesh(geometry, material);
+                mesh.position.x = -3;
+                mesh.position.z = -3;
+                mesh.type = 'event';
+                mesh.viewfile = item.viewfile;
+                mesh.visible = false;
+                mesh.start = Number(item.start);
+                mesh.end = Number(item.end);
+                material.needsUpdate = true;
+
+                scene.add(mesh);
+                eventItems.push(mesh);
+            });
+        }
 
 
         var url = obj.url;
@@ -330,11 +404,7 @@ class Viewer {
             texture.minFilter = THREE.LinearFilter;
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
-
-            //video.pause();
-            //video.addEventListener('canplaythrough', function () {
             video.play();
-            //});
 
         } else {
             video = document.createElement('video');
@@ -412,8 +482,6 @@ class Viewer {
             texture.minFilter = THREE.LinearFilter;
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
-            //video.addEventListener('canplaythrough', function () {
-            //});
             document.getElementById('play').addEventListener('click', function () {
                 video.play();
             }, false);
