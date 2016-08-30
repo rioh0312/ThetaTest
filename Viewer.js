@@ -70,22 +70,21 @@ class Viewer {
         controls.enableZoom = true;
         controls.enablePan = true;
 
-        if (that.viewmode === that.VIEW_MODE_ONE) {
-            function setOrientationControls(e) {
-                if (!e.alpha) {
-                    return;
-                }
-
-                controls = new THREE.DeviceOrientationControls(camera, true);
-                controls.connect();
-                controls.update();
-
-                element.addEventListener('click', fullscreen, false);
-
-                window.removeEventListener('deviceorientation', setOrientationControls, true);
+        function setOrientationControls(e) {
+            if (!e.alpha) {
+                return;
             }
-            window.addEventListener('deviceorientation', setOrientationControls, true);
+
+            controls = new THREE.DeviceOrientationControls(camera, true);
+            controls.connect();
+            controls.update();
+
+            element.addEventListener('click', fullscreen, false);
+
+            window.removeEventListener('deviceorientation', setOrientationControls, true);
         }
+        window.addEventListener('deviceorientation', setOrientationControls, true);
+
         // add resize event
         window.addEventListener('resize', resize, false);
         setTimeout(resize, 1);
@@ -118,10 +117,10 @@ class Viewer {
             camera.updateProjectionMatrix();
             controls.update(dt);
 
-            intersects();
+            checkIntersects();
         }
 
-        function intersects() {
+        function checkIntersects() {
             var selectObjects = that.selectObjects;
             var eventItems = that.eventItems;
             var projector = that.projector;
@@ -183,11 +182,10 @@ class Viewer {
                     };
                 } else {
                     if (that.selected.id === found.object.uuid) {
-
                         that.selected.limit -= 1;
                         if (that.selected.limit <= 0) {
                             if (that.doIntersect) {
-                            that.doIntersect = false;
+                                that.doIntersect = false;
 
                                 Viewer.writeLog('select root');
                                 if (found.object.type === 'event') {
@@ -230,6 +228,8 @@ class Viewer {
                                     });
                                 }
                             }
+                        } else {
+                            Viewer.writeLog('limit: ' + that.selected.limit);
                         }
                     } else {
                         that.selected = {
@@ -355,6 +355,7 @@ class Viewer {
             Viewer.writeLog('loaded node texture');
         });
 
+        that.LIMIT = 50;
         that.doIntersect = true;
     }
 
@@ -491,6 +492,7 @@ class Viewer {
 
             }
             window.makeVideoPlayableInline(video, false);
+            video.play();
 
             // 動画プレイヤーをテクスチャとするマテリアルを作成
             var texture = new THREE.VideoTexture(video);
@@ -498,6 +500,7 @@ class Viewer {
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
         }
+        that.LIMIT = 10;
         that.doIntersect = true;
     }
 
