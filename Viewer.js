@@ -307,6 +307,7 @@ class Viewer {
         var that = this;
         var sphere = this.sphere;
         var scene = this.scene;
+        var controls = this.controls;
         var camera = this.camera;
         var selectObjects = this.selectObjects;
         var eventItems = this.eventItems;
@@ -364,6 +365,10 @@ class Viewer {
             sphere.material.needsUpdate = true;
             Viewer.writeLog('loaded node texture');
         });
+
+        // カメラを正面に向ける
+        controls.center.set(0, 0, 0);
+        camera.position.copy(controls.center).add(new THREE.Vector3(1, 0, 0));
 
         that.LIMIT = 50;
         that.doIntersect = true;
