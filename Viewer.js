@@ -301,7 +301,7 @@ class Viewer {
         var camera = this.camera;
         var selectObjects = this.selectObjects;
         var eventItems = this.eventItems;
-        this.prevLineId = "1234"; //debug
+        this.prevLineId = '';
         this.mode = "node";
 
         sphere.material.wireframe = false;
@@ -329,15 +329,16 @@ class Viewer {
                 isPrev = true;
                 color = 0xff0000;
             }
+            //new THREE.TextureLoader().load(line.image, function (map) {
+            var material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture(line.image) }); // old version
+            var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
+            var mesh = new THREE.Mesh(geometry, material);
 
             var radius = 4;
             var rad = line.degree * Math.PI / 180;
             var x = radius * Math.cos(rad);
             var z = radius * Math.sin(rad);
 
-            var material = new THREE.MeshBasicMaterial({ color: color/*, wireframe: true*/ });
-            var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
-            var mesh = new THREE.Mesh(geometry, material);
             mesh.position.x = x;
             mesh.position.z = z;
             mesh.lineId = line.id;
@@ -345,11 +346,11 @@ class Viewer {
             scene.add(mesh);
 
             selectObjects.push(mesh);
+            //});
         }
 
         Viewer.writeLog('start node texture loading');
-        var loader = new THREE.TextureLoader();
-        loader.load(url, function (map) {
+        new THREE.TextureLoader().load(url, function (map) {
             sphere.material.map = map;
             sphere.material.needsUpdate = true;
             Viewer.writeLog('loaded node texture');
@@ -477,7 +478,7 @@ class Viewer {
 
                 $.ajax({
                     type: "POST",
-                    url: "http://www.snowwhite.hokkaido.jp/manavimk2/node/send", // TODO サーバーサイドでdataの内容に合わせたJSONを返却
+                    url: "http://www.snowwhite.hokkaido.jp/manavimk2/node/send",
                     data: {
                         id: obj.next_node_id
                     },
