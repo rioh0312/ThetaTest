@@ -16,6 +16,7 @@ class Viewer {
         this.mode;
         this.itemView;
         this.canplay;
+        this.doIntersect = false;
 
         this.LIMIT = 100;
         this.VIEW_MODE_ZEOR = "0";
@@ -66,24 +67,25 @@ class Viewer {
 
         // create controls
         var controls = new THREE.OrbitControls(camera, element);
-        controls.noZoom = true;
+        controls.enableZoom = true;
         controls.enablePan = true;
 
-        function setOrientationControls(e) {
-            if (!e.alpha) {
-                return;
+        if (that.viewmode === that.VIEW_MODE_ONE) {
+            function setOrientationControls(e) {
+                if (!e.alpha) {
+                    return;
+                }
+
+                controls = new THREE.DeviceOrientationControls(camera, true);
+                controls.connect();
+                controls.update();
+
+                element.addEventListener('click', fullscreen, false);
+
+                window.removeEventListener('deviceorientation', setOrientationControls, true);
             }
-
-            controls = new THREE.DeviceOrientationControls(camera, true);
-            controls.connect();
-            controls.update();
-
-            element.addEventListener('click', fullscreen, false);
-
-            window.removeEventListener('deviceorientation', setOrientationControls, true);
+            window.addEventListener('deviceorientation', setOrientationControls, true);
         }
-        window.addEventListener('deviceorientation', setOrientationControls, true);
-
         // add resize event
         window.addEventListener('resize', resize, false);
         setTimeout(resize, 1);
@@ -112,16 +114,20 @@ class Viewer {
         }
 
         function update(dt) {
+            resize();
+            camera.updateProjectionMatrix();
+            controls.update(dt);
+
+            intersects();
+        }
+
+        function intersects() {
             var selectObjects = that.selectObjects;
             var eventItems = that.eventItems;
             var projector = that.projector;
             var camera = that.camera;
             var raycaster = that.raycaster;
             var scene = that.scene;
-            resize();
-
-            camera.updateProjectionMatrix();
-            controls.update(dt);
 
             var intersectables = [];
             for (var i = 0; i < selectObjects.length; i++) {
@@ -180,46 +186,49 @@ class Viewer {
 
                         that.selected.limit -= 1;
                         if (that.selected.limit <= 0) {
+                            if (that.doIntersect) {
+                            that.doIntersect = false;
 
-                            Viewer.writeLog('select root');
-                            if (found.object.type === 'event') {
-                                if (!that.itemView) {
-                                    that.video.pause();
+                                Viewer.writeLog('select root');
+                                if (found.object.type === 'event') {
+                                    if (!that.itemView) {
+                                        that.video.pause();
 
-                                    var loader = new THREE.TextureLoader();
-                                    loader.load(mesh.viewfile, function (map) {
-                                        var material = new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false });
-                                        var geometry = new THREE.PlaneGeometry(7, 5, 0, 0);
-                                        var mesh = new THREE.Mesh(geometry, material);
-                                        mesh.position.x = found.object.position.x;
-                                        mesh.position.z = found.object.position.z;
-                                        mesh.type = 'event';
-                                        material.needsUpdate = true;
-                                        scene.add(mesh);
+                                        var loader = new THREE.TextureLoader();
+                                        loader.load(mesh.viewfile, function (map) {
+                                            var material = new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false });
+                                            var geometry = new THREE.PlaneGeometry(7, 5, 0, 0);
+                                            var mesh = new THREE.Mesh(geometry, material);
+                                            mesh.position.x = found.object.position.x;
+                                            mesh.position.z = found.object.position.z;
+                                            mesh.type = 'event';
+                                            material.needsUpdate = true;
+                                            scene.add(mesh);
 
-                                        that.itemView = mesh;
+                                            that.itemView = mesh;
+                                        });
+                                    }
+
+                                } else {
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "http://www.snowwhite.hokkaido.jp/manavimk2/road/send",
+                                        data: {
+                                            "id": found.object.lineId
+                                        },
+                                        dataType: "json",
+                                        beforeSend: function (xhr) {
+                                            //if (window.navigator.userAgent.toLowerCase().indexOf('safari') != -1)
+                                            xhr.setRequestHeader("If-Modified-Since", new Date().toUTCString());
+                                        },
+                                        success: function (response) {
+                                            that.updateMaterial(response);
+                                        },
+                                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                            Viewer.writeLog(errorThrown);
+                                        }
                                     });
                                 }
-
-                            } else {
-                                $.ajax({
-                                    type: "POST",
-                                    url: "http://www.snowwhite.hokkaido.jp/manavimk2/road/send",
-                                    data: {
-                                        "id": found.object.lineId
-                                    },
-                                    dataType: "json",
-                                    beforeSend: function (xhr) {
-                                        //if (window.navigator.userAgent.toLowerCase().indexOf('safari') != -1)
-                                        xhr.setRequestHeader("If-Modified-Since", new Date().toUTCString());
-                                    },
-                                    success: function (response) {
-                                        that.updateMaterial(response);
-                                    },
-                                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                        Viewer.writeLog(errorThrown);
-                                    }
-                                });
                             }
                         }
                     } else {
@@ -240,7 +249,8 @@ class Viewer {
                 geometry.dispose();
                 material.dispose();
                 that.video.play();
-                that.itemView = undefined
+                that.itemView = undefined;
+                that.doIntersect = true;
             }
         }
 
@@ -344,9 +354,12 @@ class Viewer {
             sphere.material.needsUpdate = true;
             Viewer.writeLog('loaded node texture');
         });
+
+        that.doIntersect = true;
     }
 
     setLineMode(obj) {
+        console.log(new Date().getTime());
         var that = this;
         var sphere = this.sphere;
         var scene = this.scene;
@@ -438,6 +451,9 @@ class Viewer {
             video.oncanplaythrough = function () {
                 Viewer.writeLog('can play through');
                 that.canplay = true;
+                if (that.video.paused) {
+                    that.video.play();
+                }
             }
             video.onplay = function () {
                 Viewer.writeLog('play');
@@ -475,17 +491,14 @@ class Viewer {
 
             }
             window.makeVideoPlayableInline(video, false);
-            video.pause();
 
             // 動画プレイヤーをテクスチャとするマテリアルを作成
             var texture = new THREE.VideoTexture(video);
             texture.minFilter = THREE.LinearFilter;
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
-            document.getElementById('play').addEventListener('click', function () {
-                video.play();
-            }, false);
         }
+        that.doIntersect = true;
     }
 
     static writeLog(msg) {

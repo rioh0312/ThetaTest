@@ -24,17 +24,4 @@ var viewer;
         error: function (XMLHttpRequest, textStatus, errorThrown) {
         }
     });
-
-    $('#next').on('click', function () {
-        $.ajax({
-            type: "POST",
-            url: "http://www.snowwhite.hokkaido.jp/manavimk2/node/send",
-            dataType: "json",
-            success: function (response) {
-                viewer.updateMaterial(response);
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-            }
-        });
-    });
 })();
