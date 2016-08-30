@@ -330,7 +330,7 @@ class Viewer {
                 color = 0xff0000;
             }
             //new THREE.TextureLoader().load(line.image, function (map) {
-            var material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture(line.image) }); // old version
+            var material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture(line.image), transparent: true  }); // old version
             var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
             var mesh = new THREE.Mesh(geometry, material);
 
