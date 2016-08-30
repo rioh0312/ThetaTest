@@ -16,6 +16,7 @@ class Viewer {
         this.mode;
         this.itemView;
         this.canplay;
+        this.controls;
         this.doIntersect = false;
 
         this.LIMIT = 100;
@@ -62,13 +63,16 @@ class Viewer {
         var camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
         this.camera = camera;
         camera.position.set(0, 0, 0.1);
-        camera.lookAt(sphere.position);
         scene.add(camera);
 
         // create controls
         var controls = new THREE.OrbitControls(camera, element);
         controls.enableZoom = true;
         controls.enablePan = true;
+        controls.center.set(0, 0, 0);
+        this.controls = controls;
+        camera.position.copy(controls.center).add(new THREE.Vector3(1, 0, 0));
+        //controls.target = new THREE.Vector3(0, 0, 0);
 
         function setOrientationControls(e) {
             if (!e.alpha) {
@@ -96,6 +100,11 @@ class Viewer {
         stats.domElement.style.zIndex = 100;
         document.body.appendChild(stats.domElement);
 
+        /*
+        var axis = new THREE.AxisHelper(1000);
+        scene.add(axis);
+        axis.position.set(0, 0, 0);
+        */
         animate();
 
         function resize() {
@@ -330,7 +339,7 @@ class Viewer {
                 color = 0xff0000;
             }
             //new THREE.TextureLoader().load(line.image, function (map) {
-            var material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture(line.image), transparent: true  }); // old version
+            var material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture(line.image), transparent: true }); // old version
             var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
             var mesh = new THREE.Mesh(geometry, material);
 
@@ -365,6 +374,8 @@ class Viewer {
         var that = this;
         var sphere = this.sphere;
         var scene = this.scene;
+        var controls = this.controls;
+        var camera = this.camera;
         var selectObjects = this.selectObjects;
         var eventItems = this.eventItems;
         this.mode = "line";
@@ -501,6 +512,11 @@ class Viewer {
             sphere.material.map = texture;
             sphere.material.needsUpdate = true;
         }
+
+        // カメラを正面に向ける
+        controls.center.set(0, 0, 0);
+        camera.position.copy(controls.center).add(new THREE.Vector3(1, 0, 0));
+
         that.LIMIT = 10;
         that.doIntersect = true;
     }
