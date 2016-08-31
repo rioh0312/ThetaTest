@@ -20,7 +20,7 @@ class Viewer {
         this.doIntersect = false;
 
         this.LIMIT = 100;
-        this.VIEW_MODE_ZEOR = "0";
+        this.VIEW_MODE_ZERO = "0";
         this.VIEW_MODE_ONE = "1";
         this.viewmode = viewmode;
     }
@@ -36,7 +36,7 @@ class Viewer {
             antialias: true
         });
         var element = renderer.domElement;
-        var container = document.getElementById('stage');
+        var container = document.getElementById('world');
         container.appendChild(element);
 
         // create stereo effect
@@ -66,7 +66,7 @@ class Viewer {
         scene.add(camera);
 
         // create controls
-        var controls = new THREE.OrbitControls(camera, element);
+        var controls = new THREE.OrbitControls(camera);
         controls.enableZoom = true;
         controls.enablePan = true;
         controls.center.set(0, 0, 0);
@@ -82,7 +82,6 @@ class Viewer {
             controls = new THREE.DeviceOrientationControls(camera, true);
             controls.connect();
             controls.update();
-
             element.addEventListener('click', fullscreen, false);
 
             window.removeEventListener('deviceorientation', setOrientationControls, true);
@@ -100,11 +99,8 @@ class Viewer {
         stats.domElement.style.zIndex = 100;
         document.body.appendChild(stats.domElement);
 
-        /*
-        var axis = new THREE.AxisHelper(1000);
-        scene.add(axis);
-        axis.position.set(0, 0, 0);
-        */
+        // set cursor
+        var cursor = new THREE.Vector2(0, 0);
 
         new THREE.TextureLoader().load('cover.png', function (map) {
             var cover = new THREE.Mesh(
@@ -118,6 +114,7 @@ class Viewer {
             cover.rotation.x = Math.PI / -2;
             scene.add(cover);
         })
+
         animate();
 
         function resize() {
@@ -127,10 +124,10 @@ class Viewer {
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
 
-            renderer.setSize(width, height);
-
             if (that.viewmode === that.VIEW_MODE_ONE) {
                 effect.setSize(width, height);
+            } else {
+                renderer.setSize(width, height);
             }
         }
 
@@ -173,12 +170,18 @@ class Viewer {
                 that.itemView.rotation.setFromRotationMatrix(camera.matrix);
             }
 
+            /*
             var gaze = new THREE.Vector3(0, 0, 1);
             gaze.unproject(camera);
             raycaster.set(
                 camera.position,
                 gaze.sub(camera.position).normalize()
             );
+            var intersects = raycaster.intersectObjects(intersectables);
+            */
+
+            // ポイントが乗っているオブジェクトを取得
+            raycaster.setFromCamera(cursor, camera);
             var intersects = raycaster.intersectObjects(intersectables);
 
             // reset
@@ -547,4 +550,5 @@ class Viewer {
         $('#log-field').append(li)
         $('#info').scrollTop($('#info')[0].scrollHeight);
     }
+
 }
