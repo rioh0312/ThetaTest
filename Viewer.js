@@ -105,6 +105,19 @@ class Viewer {
         scene.add(axis);
         axis.position.set(0, 0, 0);
         */
+
+        new THREE.TextureLoader().load('cover.png', function (map) {
+            var cover = new THREE.Mesh(
+                new THREE.CircleGeometry(3, 32),
+                new THREE.MeshBasicMaterial({
+                    map: map,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                }));
+            cover.position.set(0, -4, 0)
+            cover.rotation.x = Math.PI / -2;
+            scene.add(cover);
+        })
         animate();
 
         function resize() {
