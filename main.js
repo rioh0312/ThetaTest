@@ -11,7 +11,14 @@ var viewer;
         if (key != '') vars[key] = decodeURI(val);
     }
 
-    var viewer = new Viewer(vars['viewmode']);
+    var viewmode = vars['viewmode'];
+    var nodeId = vars['node_id'];
+    if (!nodeId) {
+        alert('Invalid node id.');
+        return;
+    }
+
+    var viewer = new Viewer(viewmode);
     viewer.start();
 
     $.ajax({
