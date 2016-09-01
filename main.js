@@ -18,6 +18,11 @@ var viewer;
         return;
     }
 
+    if (viewmode === '0') {
+        $('.view-1').css('display', 'none');
+    } else {
+        $('.view-0').css('display', 'none');
+    }
     var viewer = new Viewer(viewmode);
     viewer.start();
 
