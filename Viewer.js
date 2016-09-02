@@ -400,6 +400,7 @@ class Viewer {
         var selectObjects = this.selectObjects;
         var eventItems = this.eventItems;
         this.mode = "line";
+        this.obj = obj;
         sphere.material.wireframe = false;
 
         // remove select objects
@@ -512,7 +513,7 @@ class Viewer {
                     type: "POST",
                     url: "http://www.snowwhite.hokkaido.jp/manavimk2/node/send",
                     data: {
-                        id: obj.next_node_id
+                        id: that.obj.next_node_id
                     },
                     dataType: "json",
                     success: function (response) {
