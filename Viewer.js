@@ -223,7 +223,7 @@ class Viewer {
                                         that.video.pause();
 
                                         var loader = new THREE.TextureLoader();
-                                        loader.load(mesh.viewfile, function (map) {
+                                        loader.load(found.object.viewfile, function (map) {
                                             var material = new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false });
                                             var geometry = new THREE.PlaneGeometry(7, 5, 0, 0);
                                             var mesh = new THREE.Mesh(geometry, material);
@@ -425,23 +425,28 @@ class Viewer {
         // create event items
         for (var i = 0; i < obj.items.length; i++) {
             var item = obj.items[i];
-            var loader = new THREE.TextureLoader();
-            loader.load(item.file, function (map) {
-                var material = new THREE.MeshBasicMaterial({ map: map, transparent: true });
-                var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
-                var mesh = new THREE.Mesh(geometry, material);
-                mesh.position.x = -3;
+            var material = new THREE.MeshBasicMaterial({
+                map: THREE.ImageUtils.loadTexture(item.file),
+                transparent: true
+            }); // old
+            var geometry = new THREE.PlaneGeometry(0.5, 0.5, 0, 0);
+            var mesh = new THREE.Mesh(geometry, material);
+            mesh.position.x = 0;
+            if (item.type === '0') {
                 mesh.position.z = -3;
-                mesh.type = 'event';
-                mesh.viewfile = item.viewfile;
-                mesh.visible = false;
-                mesh.start = Number(item.start);
-                mesh.end = Number(item.end);
-                material.needsUpdate = true;
+            } else {
+                mesh.position.z = 3;
+            }
+            mesh.type = 'event';
+            mesh.title = item.title;
+            mesh.viewfile = item.viewfile;
+            mesh.visible = false;
+            mesh.start = Number(item.start);
+            mesh.end = Number(item.end);
+            material.needsUpdate = true;
 
-                scene.add(mesh);
-                eventItems.push(mesh);
-            });
+            scene.add(mesh);
+            eventItems.push(mesh);
         }
 
 
