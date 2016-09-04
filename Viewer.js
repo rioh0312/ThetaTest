@@ -102,14 +102,16 @@ class Viewer {
         // set cursor
         var cursor = new THREE.Vector2(0, 0);
 
+        var cover;
         new THREE.TextureLoader().load('cover.png', function (map) {
-            var cover = new THREE.Mesh(
+            cover = new THREE.Mesh(
                 new THREE.CircleGeometry(3, 32),
                 new THREE.MeshBasicMaterial({
                     map: map,
                     transparent: true,
                     side: THREE.DoubleSide
                 }));
+            cover.type = 'skip';
             cover.position.set(0, -4, 0)
             cover.rotation.x = Math.PI / -2;
             scene.add(cover);
@@ -168,6 +170,9 @@ class Viewer {
             }
             if (that.itemView) {
                 that.itemView.rotation.setFromRotationMatrix(camera.matrix);
+            }
+            if (cover) {
+                intersectables.push(cover);
             }
 
             /*
@@ -231,7 +236,9 @@ class Viewer {
                                             that.itemView = mesh;
                                         });
                                     }
-
+                                } else if (found.object.type === 'skip' && that.mode === 'line') {
+                                    that.video.pause();
+                                    that.video.currentTime = that.video.duration;
                                 } else {
                                     $.ajax({
                                         type: "POST",
