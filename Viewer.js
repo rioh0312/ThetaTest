@@ -236,9 +236,11 @@ class Viewer {
                                             that.itemView = mesh;
                                         });
                                     }
-                                } else if (found.object.type === 'skip' && that.mode === 'line') {
-                                    that.video.pause();
-                                    that.video.currentTime = that.video.duration;
+                                } else if (found.object.type === 'skip') {
+                                    if (that.mode === 'line') {
+                                        that.video.pause();
+                                        that.video.currentTime = that.video.duration;
+                                    }
                                 } else {
                                     $.ajax({
                                         type: "POST",
