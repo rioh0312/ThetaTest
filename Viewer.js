@@ -171,7 +171,7 @@ class Viewer {
             if (that.itemView) {
                 that.itemView.rotation.setFromRotationMatrix(camera.matrix);
             }
-            if (cover) {
+            if (cover && that.mode === 'line') {
                 intersectables.push(cover);
             }
 
